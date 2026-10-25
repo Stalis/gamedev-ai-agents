@@ -13,3 +13,25 @@ jobs:
       - name: Run kit validation
         shell: pwsh
         run: ./scripts/validate-kit.ps1 -Quiet
+
+  python-scripts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Byte-compile the Python scripts
+        run: python -m py_compile scripts/*.py
+      - name: Run usage regression tests
+        run: python scripts/test_usage.py
+      - name: Smoke-test the meta check and Unity guard
+        run: |
+          mkdir -p "$RUNNER_TEMP/unity-project/Assets"
+          python scripts/check_unity_meta.py --project-root "$RUNNER_TEMP/unity-project" --full
+          python scripts/unity_guard.py --help
