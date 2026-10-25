@@ -21,7 +21,7 @@ Select the cheapest validation that proves the changed behavior while protecting
 8. Store command lines, logs, and results in a new immutable persistent ignored directory outside the disposable candidate, keyed by candidate tree and attempt. Never reuse or overwrite an earlier attempt directory.
 9. Inspect exit code, result XML, logs, and Unity console evidence.
 10. In a `finally` postflight on success or failure, compare status and the protected-path content manifest. Treat unexpected asset, package, setting, scene, prefab, metadata, untracked, or ignored-file changes as a blocker; never discard them automatically.
-11. Run `.agents/scripts/check-unity-meta.ps1` after Unity or asset-related validation.
+11. Run `python3 .agents/scripts/check_unity_meta.py` after Unity or asset-related validation.
 12. Report exact commands/results, required editor version, candidate tree SHA, task-content fingerprint, source HEAD, unexpected mutations, and unverified gaps.
 
 ## Validation Ladder
@@ -49,4 +49,4 @@ Use the first level that proves the task:
 
 ## Reference
 
-Read `references/validation-commands.md` for guarded PowerShell templates and evidence handling.
+Read `references/validation-commands.md` for the guarded bash templates (driven by `.agents/scripts/unity_guard.py`) and evidence handling.

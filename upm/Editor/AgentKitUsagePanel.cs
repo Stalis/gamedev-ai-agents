@@ -107,12 +107,12 @@ namespace GamedevAgentKit.Editor
                 {
                     _refreshing = true;
                     _message = null;
-                    AgentKitProcess.RunPowerShellAsync(".agents/scripts/usage-stats.ps1", projectRoot, exitCode =>
+                    AgentKitProcess.RunPythonAsync(".agents/scripts/usage_stats.py", projectRoot, exitCode =>
                     {
                         _refreshing = false;
-                        if (exitCode == AgentKitProcess.PowerShellNotFoundExitCode)
+                        if (exitCode == AgentKitProcess.PythonNotFoundExitCode)
                         {
-                            _message = "PowerShell not found. Install pwsh or Windows PowerShell and try again.";
+                            _message = "Python 3 not found. Install Python 3 (for example via Homebrew or python.org) and try again.";
                         }
                         else if (exitCode != 0)
                         {
@@ -127,12 +127,12 @@ namespace GamedevAgentKit.Editor
                 {
                     _refreshing = true;
                     _message = null;
-                    AgentKitProcess.RunPowerShellAsync(".agents/scripts/usage-stats.ps1", projectRoot, new[] { "-Rebuild" }, exitCode =>
+                    AgentKitProcess.RunPythonAsync(".agents/scripts/usage_stats.py", projectRoot, new[] { "--rebuild" }, exitCode =>
                     {
                         _refreshing = false;
-                        if (exitCode == AgentKitProcess.PowerShellNotFoundExitCode)
+                        if (exitCode == AgentKitProcess.PythonNotFoundExitCode)
                         {
-                            _message = "PowerShell not found. Install pwsh or Windows PowerShell and try again.";
+                            _message = "Python 3 not found. Install Python 3 (for example via Homebrew or python.org) and try again.";
                         }
                         else if (exitCode != 0)
                         {

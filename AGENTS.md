@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This repository stores a portable AI-agent kit (Codex, Claude Code, Gemini CLI, Google Antigravity) for Unity and C#/ASP.NET game development. Keep the kit reusable, conservative, and free of secrets. The install scripts target Windows (PowerShell 5.1 and pwsh 7); other platforms are out of scope for now.
+This repository stores a portable AI-agent kit (Codex, Claude Code, Gemini CLI, Google Antigravity) for Unity and C#/ASP.NET game development. Keep the kit reusable, conservative, and free of secrets. The install scripts target Windows (PowerShell 5.1 and pwsh 7); macOS/Linux projects install through the UPM package. The helper scripts shipped into projects (hooks, usage footer/stats, meta check, Unity validation guard) are Python 3, standard library only, and must stay runnable on Python 3.9+ on every platform.
 
 ## Layout Contract
 
@@ -12,6 +12,7 @@ This repository stores a portable AI-agent kit (Codex, Claude Code, Gemini CLI, 
 - The install layout is root-minimal by contract: template `AGENTS.md` is the only file installed into a project root (Codex/Cursor/Antigravity discovery requires it there); the other contracts live in `.agents/`, the Claude pointer in `.claude/CLAUDE.md`. Portable installs (`-Portable`, or the window toggle) git-exclude every manifest-tracked file via `.git/info/exclude`; the exclude block markers are shared between `scripts/kit-common.ps1` and `upm/Editor/KitGitExclude.cs` and must stay in sync.
 - The full engineering discipline lives only in `global/AGENTS.md`. Template `AGENTS.md` files carry a short core-discipline summary plus stack specifics - do not re-duplicate the full rulebook.
 - `upm/` is the Unity Package Manager wrapper. `upm/Kit~/` is a rendered artifact produced by `scripts/render-upm-payload.ps1` - never edit it by hand. Re-run the render script after changing templates, skills, or the canon; `validate-kit.ps1` fails on payload drift and on a `package.json` version that does not match `VERSION`.
+- Every project helper script exists as a Python 3 port in `scripts/*.py` (the hook target on all platforms) next to its `.ps1` original (the Codex-on-Windows `commandWindows` fallback). Change both together and keep them behaviorally identical: same flags (the Python ports also accept the PowerShell spellings), same output, same `.agents/usage/` file formats. `scripts/unity_guard.py` is the executable form of the guarded validation/build templates in the unity-validate and unity-build skill references.
 - The install content sets are defined once in `scripts/kit-common.ps1` (`Install-KitUnityContent`, `Install-KitBackendContent`); installers and the payload renderer call these shared functions and must not restate the content list.
 
 ## Editing Rules
@@ -31,7 +32,7 @@ After changing anything in the kit:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-kit.ps1
 ```
 
-It checks per-skill structure (frontmatter, openai.yaml, reference integrity, size budget), skill-set consistency, canon parsing and rendering for all three platforms, the rendered-only guard (no stored adapters), hook targets, docs path references, README EN/RU structural parity, the CHANGELOG entry for the current version, the ASCII policy, and UPM package name/version lock-step plus `Kit~` payload drift. It must pass before committing; CI (`.github/workflows/validate.yml`) runs it on every push and pull request.
+It checks per-skill structure (frontmatter, openai.yaml, reference integrity, size budget), skill-set consistency, canon parsing and rendering for all three platforms, the rendered-only guard (no stored adapters), hook targets, docs path references, README EN/RU structural parity, the CHANGELOG entry for the current version, the ASCII policy, and UPM package name/version lock-step plus `Kit~` payload drift. It must pass before committing; CI (`.github/workflows/validate.yml`) runs it on every push and pull request. It also runs `scripts/test_usage.py`, the Python port of `scripts/test-usage.ps1`; run that directly on macOS/Linux (`python3 scripts/test_usage.py`), where CI additionally compiles and tests the Python scripts on the oldest supported Python.
 
 Optional deeper checks when the Codex system skills are installed locally:
 

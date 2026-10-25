@@ -5,8 +5,8 @@
 <p align="center">
   <a href="https://img.shields.io"><img alt="Unity" src="https://img.shields.io/badge/Unity-2020.3%2B-black?logo=unity"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/agents-Codex%20%C2%B7%20Claude%20Code%20%C2%B7%20Gemini%20CLI%20%C2%B7%20Antigravity-blueviolet">
-  <img alt="Kit" src="https://img.shields.io/badge/kit-0.4.19-blue">
-  <a href="https://github.com/ilezhnin/gamedev-ai-agents/actions/workflows/validate.yml"><img alt="validate" src="https://github.com/ilezhnin/gamedev-ai-agents/actions/workflows/validate.yml/badge.svg"></a>
+  <img alt="Kit" src="https://img.shields.io/badge/kit-0.5.0-blue">
+  <a href="https://github.com/Stalis/gamedev-ai-agents/actions/workflows/validate.yml"><img alt="validate" src="https://github.com/Stalis/gamedev-ai-agents/actions/workflows/validate.yml/badge.svg"></a>
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
@@ -29,6 +29,7 @@
 - **28 скиллов** для реальной геймдев-работы: упрощение без изменения поведения, поиск и генерация ассетов, аудит кодовой базы, мерджи сцен и префабов, EditMode/PlayMode тесты, разбор IL2CPP-сборок, профилирование с бюджетами, автоматизация редактора через MCP, поэтапные апгрейды.
 - **Студия ролей** - геймдизайнер, специалисты по ассетам, продюсер, архитектор, QA, devops, плюс воркеры, ревьюеры и исследователи - рендерятся нативно для каждой платформы.
 - **Платформонезависимость by design** - один канон, тонкие рендеренные адаптеры. Всё состояние живёт в файлах репозитория, поэтому переключение Codex <-> Claude Code <-> Gemini CLI <-> Antigravity посреди задачи ничего не теряет.
+- **Вспомогательные скрипты на Python** - хуки, usage-футер и статистика, проверка `.meta` и защищённый раннер Unity-валидации/сборок поставляются на Python 3 (только стандартная библиотека), поэтому работают на macOS, Linux и Windows без PowerShell; оригиналы на PowerShell остаются запасным вариантом для Codex на Windows.
 - **Безопасный жизненный цикл** - установка по hash-манифесту: обновление трогает только немодифицированные файлы, ваши правки всегда выживают, деинсталляция удаляет ровно то, что ставил кит.
 - **Портативный режим** - опциональная установка без следов: один файл в корне (`AGENTS.md`), остальное в `.agents/`, `.claude/`, `.codex/`, `.gemini/`, `.cursor/`; портативная установка локально исключает каждый файл кита из git, а ссылку на пакет можно убрать - в ваш репозиторий о ките не попадает ничего.
 
@@ -37,7 +38,7 @@
 **1. Установите пакет.** В Unity 2020.3+: `Window -> Package Manager -> + -> Add package from git URL...`
 
 ```text
-https://github.com/ilezhnin/gamedev-ai-agents.git?path=/upm
+https://github.com/Stalis/gamedev-ai-agents.git?path=/upm
 ```
 
 Добавьте `#v<тег>`, чтобы зафиксировать версию.
@@ -159,7 +160,7 @@ C# бэкенд (`backend-...`), для игровых серверов и се�
 
 Модели ролей распределены по capability tier: Codex рендерит Sol для architecture/design/planning/review и Terra для everyday execution/research, с Luna для repeatable test runners. Claude рендерит `claude-fable-5` для highest-decision и reviewer ролей, `sonnet` для execution/research/asset work и `haiku` для test runners без неподдерживаемого effort override. Рутинные роли ограничены `xhigh`, `high` или `medium`; unconstrained `max`/`ultra` - только явные разовые эскалации. Gemini CLI и Antigravity получают общее проектное поведение, но кит не закрепляет там model choice для каждой роли.
 
-Codex, Claude Code и Gemini CLI получают рабочие хуки для проверки гигиены `.meta`/GUID после правок и отчёта об использовании после хода. Usage-хуки пишут `.agents/usage/last-report.md`, platform-scoped reports, session-scoped reports, V2 events и history; поскольку часть клиентов скрывает hook-сообщения, установленный `AGENTS.md` также требует добавлять видимую usage-статистику из `.agents/scripts/usage-footer.ps1 -Platform <platform> -SessionId <exact-session-id>` в каждый final response. Без exact session ID footer fail-closed как `Usage: unavailable`, а не показывает stale latest report. Закомментированный блок `[mcp_servers.unity]` в `.codex/config.toml` показывает, куда подключить сервер [MCP for Unity](https://github.com/CoplayDev/unity-mcp) - с ним `unity-mcp` и QA-этап пайплайна управляют редактором напрямую: сцены, PlayMode, тесты, скриншоты. Claude Code читает MCP-серверы из `.mcp.json`; правило-указатель для Cursor тоже в комплекте.
+Codex, Claude Code и Gemini CLI получают рабочие хуки для проверки гигиены `.meta`/GUID после правок и отчёта об использовании после хода. Usage-хуки пишут `.agents/usage/last-report.md`, platform-scoped reports, session-scoped reports, V2 events и history; поскольку часть клиентов скрывает hook-сообщения, установленный `AGENTS.md` также требует добавлять видимую usage-статистику из `python3 .agents/scripts/usage_footer.py --platform <platform> --session-id <exact-session-id>` в каждый final response. Команды хуков - Python 3 (`python3 .agents/scripts/*.py`); Codex на Windows сохраняет скрипты PowerShell через `commandWindows`. Без exact session ID footer fail-closed как `Usage: unavailable`, а не показывает stale latest report. Закомментированный блок `[mcp_servers.unity]` в `.codex/config.toml` показывает, куда подключить сервер [MCP for Unity](https://github.com/CoplayDev/unity-mcp) - с ним `unity-mcp` и QA-этап пайплайна управляют редактором напрямую: сцены, PlayMode, тесты, скриншоты. Claude Code читает MCP-серверы из `.mcp.json`; правило-указатель для Cursor тоже в комплекте.
 
 ## Обновление и удаление
 
@@ -170,7 +171,7 @@ Codex, Claude Code и Gemini CLI получают рабочие хуки для
 <details>
 <summary><b>Другие способы установки (PowerShell, бэкенд-шаблон, глобальный профиль, плагин)</b></summary>
 
-Все скриптовые установщики поддерживают `-Update`, `-Force`, `-Portable` и `-WhatIf` с той же семантикой манифеста. Скрипты рассчитаны на Windows (PowerShell 5.1 и pwsh 7); другие платформы пока вне скоупа.
+Все скриптовые установщики поддерживают `-Update`, `-Force`, `-Portable` и `-WhatIf` с той же семантикой манифеста. Скрипты-установщики рассчитаны на Windows (PowerShell 5.1 и pwsh 7); на macOS/Linux ставьте через Unity Package Manager. Вспомогательные скрипты, которые они кладут в проекты, написаны на Python 3 и работают на любой платформе.
 
 **Unity-проект скриптом** (результат тот же, что у окна пакета):
 
@@ -224,6 +225,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-kit.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-unity-meta.ps1 -ProjectRoot "<путь>" -Full
 ```
 
+Те же проверки без PowerShell (любая ОС с Python 3):
+
+```bash
+python3 scripts/check_unity_meta.py --project-root "<путь>" --full   # гигиена meta/GUID
+python3 scripts/test_usage.py                                         # регрессионные тесты usage для Python-скриптов
+python3 scripts/unity_guard.py --help                                 # защищённый раннер Unity-валидации/сборок
+```
+
 `doctor.ps1` также сообщает, когда установленный проект отстал от версии кита или рендеренный слой адаптеров разъехался.
 
 </details>
@@ -253,7 +262,7 @@ scripts/                   установщики (рендерят адапте
 
 Слои конфигурации в установленном проекте: глобальные инструкции (опционально) -> проектный `AGENTS.md` + контракты -> рендеренные адаптеры (`.codex/`, `.claude/`) -> проектные скиллы и уроки в `.agents/`.
 
-Контрибьюции: запускайте `scripts\validate-kit.ps1` перед коммитом; после изменения шаблонов, скиллов или канона перерендерьте UPM-payload через `scripts\render-upm-payload.ps1`. Внутри кита - только английский, ASCII в templates/plugins/upm.
+Контрибьюции: запускайте `scripts\validate-kit.ps1` перед коммитом (он же запускает `scripts/test_usage.py`; CI дополнительно гоняет Python-тесты на Linux и macOS); держите Python-порты в `scripts/` в поведенческом соответствии с оригиналами `.ps1`; после изменения шаблонов, скиллов или канона перерендерьте UPM-payload через `scripts\render-upm-payload.ps1`. Внутри кита - только английский, ASCII в templates/plugins/upm.
 
 </details>
 

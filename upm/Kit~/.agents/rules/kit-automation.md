@@ -7,7 +7,7 @@ trigger: always_on
 After creating, editing, moving, or deleting project files in this task, run:
 
 ```
-powershell -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1
+python3 .agents/scripts/check_unity_meta.py
 ```
 
 Fix every reported issue before finishing the task. Do not skip this check.

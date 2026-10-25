@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1",
+            "command": "python3 .agents/scripts/check_unity_meta.py",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1"
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/usage-report.ps1",
+            "command": "python3 .agents/scripts/usage_report.py",
             "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/usage-report.ps1"
           }
         ]

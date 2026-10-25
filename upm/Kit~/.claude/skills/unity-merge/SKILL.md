@@ -66,4 +66,4 @@ Report:
 
 ## Reference
 
-Read `references/unityyamlmerge-setup.md` for exact PowerShell setup commands, per-file merge commands, and the manual audit command checklist.
+Read `references/unityyamlmerge-setup.md` for exact bash setup commands, per-file merge commands, and the manual audit command checklist.

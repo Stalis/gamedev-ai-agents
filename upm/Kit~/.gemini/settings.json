@@ -12,7 +12,7 @@
           {
             "type": "command",
             "name": "unity-meta-check",
-            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1",
+            "command": "python3 .agents/scripts/check_unity_meta.py",
             "description": "Rendered from global/canon/hooks.json."
           }
         ]
@@ -24,7 +24,7 @@
           {
             "type": "command",
             "name": "usage-report",
-            "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/usage-report.ps1",
+            "command": "python3 .agents/scripts/usage_report.py",
             "description": "Rendered from global/canon/hooks.json."
           }
         ]

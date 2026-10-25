@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.5.0 - 2026-10-25
+
+### Added
+- Python 3 ports (standard library only, Python 3.9+) of the project helper scripts: `check_unity_meta.py`, `usage_common.py`, `usage_report.py`, `usage_footer.py`, and `usage_stats.py`. They keep the PowerShell file formats for usage state, history, v2 events/views, and the price cache, and accept the PowerShell-style flags, so both implementations can share one `.agents/usage/` directory.
+- `scripts/unity_guard.py`, the executable form of the guarded Unity validation and player-build templates (`preflight`, `run`, `build`, `scan-logs`). Exact-editor proof reads `Info.plist` (`CFBundleVersion` + `UnityBuildNumber`) on macOS and the version resource on Windows.
+- `scripts/test_usage.py`, a Python port of the usage regression suite; `validate-kit.ps1` runs it, and CI runs it plus a byte-compile check on Linux and macOS with Python 3.9 and 3.12.
+
+### Changed
+- Canonical hooks (`global/canon/hooks.json`) render Python commands for Claude Code, Codex, Gemini CLI, and the Antigravity automation rule. Claude hooks resolve paths through `$CLAUDE_PROJECT_DIR`; Codex keeps the PowerShell scripts as `commandWindows`. New canon fields `commandClaude` and `commandWindows` replace `commandPwsh`.
+- The unity-validate, unity-build, unity-merge, and unity-upgrade references use bash and `unity_guard.py` instead of inline PowerShell, with macOS/Linux/Windows editor paths and Unity CLI hints. unity-build adds a macOS player template and a `BuildMacOS` entry point; unity-merge locates `UnityYAMLMerge` in `Unity.app/Contents/Helpers` on macOS.
+- Project and global `AGENTS.md` usage-footer instructions call `python3 .agents/scripts/usage_footer.py` (the global profile falls back to the PowerShell footer when only that one is installed).
+- The Agent Kit window's Usage panel runs `usage_stats.py` with the first available Python 3 (Homebrew and `/usr/local` locations first on macOS, because Hub-launched editors do not inherit the login shell `PATH`) instead of `pwsh`.
+- Package documentation, changelog, and license links point at this fork.
+
+### Fixed
+- Usage scripts resolve the project root from the nearest `.agents/kit-manifest.json` (then `$CLAUDE_PROJECT_DIR`), so a hook fired while the agent shell sits in a subfolder no longer writes a stray `.agents/usage/` there.
+- Guarded player builds also remove empty folders that a build created only for ignored Addressables output, instead of reporting them as protected-content mutations.
+- Guard evidence files are prefixed with the run label, so several guarded runs in one attempt no longer overwrite each other's manifests and status files.
+
 ## 0.4.20 - 2026-07-10
 
 ### Changed
