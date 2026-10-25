@@ -291,10 +291,11 @@ try {
     }
     $codexHooks = ConvertTo-CodexHooksJson -Hooks $hooksCanon -Stack "unity"
     Report ($null -ne ($codexHooks | ConvertFrom-Json).hooks) "canon: Codex hooks render valid JSON for unity"
-    # Every hook command must point at a script the payload actually ships.
+    # Every hook command must point at a script the payload actually ships
+    # (Python defaults and the PowerShell Windows fallbacks alike).
     foreach ($hook in $hooksCanon.hooks) {
-        foreach ($command in @($hook.command, $hook.commandPwsh, $hook.commandCodex, $hook.commandGemini)) {
-            if ($command -match "-File\s+(\S+)") {
+        foreach ($command in @($hook.command, $hook.commandClaude, $hook.commandWindows, $hook.commandCodex, $hook.commandGemini)) {
+            if ($command -match "(\.agents/scripts/[A-Za-z0-9_.-]+\.(ps1|py))") {
                 $hookTarget = $matches[1]
                 $shipped = Test-Path -LiteralPath (Join-Path $script:KitRoot ("upm\Kit~\" + ($hookTarget -replace "/", "\")))
                 Report $shipped "canon: hook target $hookTarget is shipped in the payload"
@@ -304,7 +305,7 @@ try {
     $agRoles = ConvertTo-AntigravityRolesRule -Roles $roles
     $agPerms = ConvertTo-AntigravityPermissionsRule -Permissions $permissions
     $agAuto = ConvertTo-AntigravityAutomationRule -Hooks $hooksCanon -Stack "unity"
-    Report (($agRoles -match "trigger: model_decision") -and ($agPerms -match "trigger: always_on") -and ($agAuto -match "check-unity-meta")) "canon: Antigravity rules render for roles, permissions, and automation"
+    Report (($agRoles -match "trigger: model_decision") -and ($agPerms -match "trigger: always_on") -and ($agAuto -match "check[-_]unity[-_]meta")) "canon: Antigravity rules render for roles, permissions, and automation"
 }
 catch {
     Report $false "canon: permissions/hooks parse and render" $_.Exception.Message
@@ -341,6 +342,29 @@ if (Test-Path -LiteralPath $usageTestScript) {
 }
 else {
     Report $false "usage: regression tests script exists"
+}
+
+# 8a-py: the same regressions against the Python ports the rendered hooks call.
+$pythonUsageTest = Join-Path $script:KitRoot "scripts\test_usage.py"
+$pythonExe = $null
+# python3 may be the Windows Store stub and python may be Python 2: take the
+# first candidate that actually reports Python 3.
+foreach ($candidate in @("python3", "python", "py")) {
+    $found = Get-Command $candidate -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $found) { continue }
+    $versionText = "$(Invoke-KitNativeQuiet { & $found.Source --version })"
+    if ($LASTEXITCODE -eq 0 -and $versionText -match "^Python 3\.") { $pythonExe = $found.Source; break }
+}
+if (-not (Test-Path -LiteralPath $pythonUsageTest)) {
+    Report $false "usage: Python regression tests script exists"
+}
+elseif (-not $pythonExe) {
+    Report $false "usage: Python 3 is available for the Python regression tests" "install Python 3 or put python3 on PATH"
+}
+else {
+    $pyOutput = @(& $pythonExe $pythonUsageTest 2>&1)
+    $pyOk = ($LASTEXITCODE -eq 0) -and (($pyOutput -join "`n") -match "usage regression tests: PASS")
+    Report $pyOk "usage: Python regression tests pass" (($pyOutput | Select-Object -Last 5) -join "; ")
 }
 
 # 8b: docs must reference paths that exist. Inline-code path references in the

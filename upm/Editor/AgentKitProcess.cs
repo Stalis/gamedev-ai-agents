@@ -11,7 +11,7 @@ namespace GamedevAgentKit.Editor
 {
     internal static class AgentKitProcess
     {
-        internal const int PowerShellNotFoundExitCode = -9001;
+        internal const int PythonNotFoundExitCode = -9001;
 
         private static Process _runningProcess;
         private static Action<int> _runningOnExit;
@@ -22,16 +22,16 @@ namespace GamedevAgentKit.Editor
             AssemblyReloadEvents.beforeAssemblyReload += StopRunningProcess;
         }
 
-        internal static void RunPowerShellAsync(string scriptRelPath, string workingDir, Action<int> onExit)
+        internal static void RunPythonAsync(string scriptRelPath, string workingDir, Action<int> onExit)
         {
-            RunPowerShellAsync(scriptRelPath, workingDir, null, onExit);
+            RunPythonAsync(scriptRelPath, workingDir, null, onExit);
         }
 
-        internal static void RunPowerShellAsync(string scriptRelPath, string workingDir, IEnumerable<string> scriptArguments, Action<int> onExit)
+        internal static void RunPythonAsync(string scriptRelPath, string workingDir, IEnumerable<string> scriptArguments, Action<int> onExit)
         {
             if (string.IsNullOrEmpty(workingDir) || string.IsNullOrEmpty(scriptRelPath))
             {
-                onExit?.Invoke(PowerShellNotFoundExitCode);
+                onExit?.Invoke(PythonNotFoundExitCode);
                 return;
             }
 
@@ -42,45 +42,28 @@ namespace GamedevAgentKit.Editor
                 : Path.Combine(workingDir, scriptRelPath.Replace('/', Path.DirectorySeparatorChar));
             absoluteScriptPath = Path.GetFullPath(absoluteScriptPath);
 
-            var shell = PowerShellExecutable.Resolve();
-            if (shell == null)
+            Process process = null;
+            foreach (var interpreter in PythonExecutable.Candidates())
             {
-                onExit?.Invoke(PowerShellNotFoundExitCode);
-                return;
-            }
-
-            Process process;
-            try
-            {
-                process = Start(shell, absoluteScriptPath, workingDir, scriptArguments);
-            }
-            catch (Win32Exception)
-            {
-                shell = PowerShellExecutable.Fallback(shell);
-                if (shell == null)
-                {
-                    onExit?.Invoke(PowerShellNotFoundExitCode);
-                    return;
-                }
-
                 try
                 {
-                    process = Start(shell, absoluteScriptPath, workingDir, scriptArguments);
+                    process = Start(interpreter, absoluteScriptPath, workingDir, scriptArguments);
+                    break;
                 }
                 catch (Win32Exception)
                 {
-                    onExit?.Invoke(PowerShellNotFoundExitCode);
-                    return;
+                    // Not installed under this name; try the next candidate.
                 }
                 catch (Exception)
                 {
-                    onExit?.Invoke(PowerShellNotFoundExitCode);
+                    onExit?.Invoke(PythonNotFoundExitCode);
                     return;
                 }
             }
-            catch (Exception)
+
+            if (process == null)
             {
-                onExit?.Invoke(PowerShellNotFoundExitCode);
+                onExit?.Invoke(PythonNotFoundExitCode);
                 return;
             }
 
@@ -90,24 +73,20 @@ namespace GamedevAgentKit.Editor
             EditorApplication.update += _runningPoll;
         }
 
-        private static Process Start(string shell, string scriptPath, string workingDir, IEnumerable<string> scriptArguments)
+        private static Process Start(string interpreter, string scriptPath, string workingDir, IEnumerable<string> scriptArguments)
         {
             var output = new StringBuilder();
             var error = new StringBuilder();
             var process = new Process();
             process.StartInfo = new ProcessStartInfo
             {
-                FileName = shell,
+                FileName = interpreter,
                 WorkingDirectory = workingDir,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true
             };
-            process.StartInfo.ArgumentList.Add("-NoProfile");
-            process.StartInfo.ArgumentList.Add("-ExecutionPolicy");
-            process.StartInfo.ArgumentList.Add("Bypass");
-            process.StartInfo.ArgumentList.Add("-File");
             process.StartInfo.ArgumentList.Add(scriptPath);
             if (scriptArguments != null)
             {
@@ -190,22 +169,51 @@ namespace GamedevAgentKit.Editor
             _runningOnExit = null;
         }
 
-        private static class PowerShellExecutable
+        private static class PythonExecutable
         {
-            internal static string Resolve()
+            // An editor launched from Unity Hub does not inherit the login shell's
+            // PATH on macOS, so well-known install locations are tried first.
+            private static readonly string[] MacCandidates =
             {
-                return "pwsh";
-            }
+                "/opt/homebrew/bin/python3",
+                "/usr/local/bin/python3",
+                "python3",
+                "/usr/bin/python3"
+            };
 
-            internal static string Fallback(string failed)
+            private static readonly string[] WindowsCandidates = { "python", "py", "python3" };
+
+            private static readonly string[] LinuxCandidates = { "python3", "python" };
+
+            internal static IEnumerable<string> Candidates()
             {
-                if (string.Equals(failed, "pwsh", StringComparison.OrdinalIgnoreCase) &&
-                    Application.platform == RuntimePlatform.WindowsEditor)
+                switch (Application.platform)
                 {
-                    return "powershell";
-                }
+                    case RuntimePlatform.OSXEditor:
+                        foreach (var candidate in MacCandidates)
+                        {
+                            if (!Path.IsPathRooted(candidate) || File.Exists(candidate))
+                            {
+                                yield return candidate;
+                            }
+                        }
 
-                return null;
+                        break;
+                    case RuntimePlatform.WindowsEditor:
+                        foreach (var candidate in WindowsCandidates)
+                        {
+                            yield return candidate;
+                        }
+
+                        break;
+                    default:
+                        foreach (var candidate in LinuxCandidates)
+                        {
+                            yield return candidate;
+                        }
+
+                        break;
+                }
             }
         }
     }

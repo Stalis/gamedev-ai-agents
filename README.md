@@ -5,8 +5,8 @@
 <p align="center">
   <a href="https://img.shields.io"><img alt="Unity" src="https://img.shields.io/badge/Unity-2020.3%2B-black?logo=unity"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/agents-Codex%20%C2%B7%20Claude%20Code%20%C2%B7%20Gemini%20CLI%20%C2%B7%20Antigravity-blueviolet">
-  <img alt="Kit" src="https://img.shields.io/badge/kit-0.4.19-blue">
-  <a href="https://github.com/ilezhnin/gamedev-ai-agents/actions/workflows/validate.yml"><img alt="validate" src="https://github.com/ilezhnin/gamedev-ai-agents/actions/workflows/validate.yml/badge.svg"></a>
+  <img alt="Kit" src="https://img.shields.io/badge/kit-0.5.0-blue">
+  <a href="https://github.com/Stalis/gamedev-ai-agents/actions/workflows/validate.yml"><img alt="validate" src="https://github.com/Stalis/gamedev-ai-agents/actions/workflows/validate.yml/badge.svg"></a>
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
@@ -29,6 +29,7 @@ This kit turns your AI coding agent - OpenAI Codex, Anthropic Claude Code, Googl
 - **28 skills** for real gamedev work: behavior-preserving simplification, asset sourcing/generation, codebase audits, scene/prefab merges, EditMode/PlayMode tests, IL2CPP build triage, profiling with budgets, editor automation over MCP, staged upgrades.
 - **A studio of roles** - game designer, asset specialists, producer, architect, QA, devops, plus workers, reviewers, and researchers - rendered natively for every platform.
 - **Platform-independent by design** - one canon, thin rendered adapters. All state lives in repo files, so switching Codex <-> Claude Code <-> Gemini CLI <-> Antigravity mid-task loses nothing.
+- **Python helper scripts** - hooks, the usage footer/stats, the `.meta` check, and the guarded Unity validation/build runner ship as Python 3 (standard library only), so they run on macOS, Linux, and Windows without PowerShell; the PowerShell originals stay as the Codex-on-Windows fallback.
 - **Safe lifecycle** - hash-manifest installs: updates refresh only unmodified files, your local edits always survive, uninstall removes exactly what the kit shipped.
 - **Portable mode** - optional zero-trace installs: one root file (`AGENTS.md`), everything else under `.agents/`, `.claude/`, `.codex/`, `.gemini/`, `.cursor/`; a portable install git-excludes every kit file locally and the package reference itself can be removed, so nothing about the kit ever reaches your repo.
 
@@ -37,7 +38,7 @@ This kit turns your AI coding agent - OpenAI Codex, Anthropic Claude Code, Googl
 **1. Install the package.** In Unity 2020.3+: `Window -> Package Manager -> + -> Add package from git URL...`
 
 ```text
-https://github.com/ilezhnin/gamedev-ai-agents.git?path=/upm
+https://github.com/Stalis/gamedev-ai-agents.git?path=/upm
 ```
 
 Append `#v<tag>` to pin a version.
@@ -159,7 +160,7 @@ One canon, rendered adapters - `.codex/`, `.claude/`, and `.gemini/settings.json
 
 Role models are budgeted by capability tier: Codex renders Sol for architecture/design/planning/review and Terra for everyday execution/research, with Luna for repeatable test runners. Claude renders `claude-fable-5` for the highest-decision and reviewer roles, `sonnet` for execution/research/asset work, and `haiku` for test runners without an unsupported effort override. Routine roles stay bounded at `xhigh`, `high`, or `medium`; unconstrained `max`/`ultra` modes are explicit one-off escalations only. Gemini CLI and Antigravity receive shared project behavior, but the kit does not pin per-role model choices there.
 
-Codex, Claude Code, and Gemini CLI get working hooks for the kit's `.meta`/GUID hygiene check after edits and usage reporting after a turn. Usage hooks write `.agents/usage/last-report.md`, platform-scoped reports, session-scoped reports, V2 events, and history; because some clients hide hook messages, installed `AGENTS.md` also requires agents to append visible usage stats from `.agents/scripts/usage-footer.ps1 -Platform <platform> -SessionId <exact-session-id>` to every final response. Without an exact session ID the footer fails closed as `Usage: unavailable` instead of showing a stale latest report. A commented `[mcp_servers.unity]` block in `.codex/config.toml` shows where to wire an [MCP for Unity](https://github.com/CoplayDev/unity-mcp) server - with it, `unity-mcp` and the pipeline's QA stage can drive the editor directly: scenes, PlayMode, tests, screenshots. Claude Code reads MCP servers from `.mcp.json`; a Cursor pointer rule ships too.
+Codex, Claude Code, and Gemini CLI get working hooks for the kit's `.meta`/GUID hygiene check after edits and usage reporting after a turn. Usage hooks write `.agents/usage/last-report.md`, platform-scoped reports, session-scoped reports, V2 events, and history; because some clients hide hook messages, installed `AGENTS.md` also requires agents to append visible usage stats from `python3 .agents/scripts/usage_footer.py --platform <platform> --session-id <exact-session-id>` to every final response. Hook commands are Python 3 (`python3 .agents/scripts/*.py`); Codex on Windows keeps the PowerShell scripts through `commandWindows`. Without an exact session ID the footer fails closed as `Usage: unavailable` instead of showing a stale latest report. A commented `[mcp_servers.unity]` block in `.codex/config.toml` shows where to wire an [MCP for Unity](https://github.com/CoplayDev/unity-mcp) server - with it, `unity-mcp` and the pipeline's QA stage can drive the editor directly: scenes, PlayMode, tests, screenshots. Claude Code reads MCP servers from `.mcp.json`; a Cursor pointer rule ships too.
 
 ## Updating And Uninstalling
 
@@ -170,7 +171,7 @@ Bump the package in Package Manager - already-installed projects auto-apply the 
 <details>
 <summary><b>Other ways to install (PowerShell, backend template, global profile, plugin)</b></summary>
 
-All scripted installers support `-Update`, `-Force`, `-Portable`, and `-WhatIf` with the same manifest semantics. The scripts target Windows (PowerShell 5.1 and pwsh 7); other platforms are currently out of scope.
+All scripted installers support `-Update`, `-Force`, `-Portable`, and `-WhatIf` with the same manifest semantics. The installer scripts target Windows (PowerShell 5.1 and pwsh 7); on macOS/Linux install through Unity Package Manager. The helper scripts they place into projects are Python 3 and run on every platform.
 
 **Unity project via script** (same result as the package window):
 
@@ -224,6 +225,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate-kit.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check-unity-meta.ps1 -ProjectRoot "<path>" -Full
 ```
 
+The same checks without PowerShell (any OS with Python 3):
+
+```bash
+python3 scripts/check_unity_meta.py --project-root "<path>" --full   # meta/GUID hygiene
+python3 scripts/test_usage.py                                         # usage regression tests for the Python scripts
+python3 scripts/unity_guard.py --help                                 # guarded Unity validation/build runner
+```
+
 `doctor.ps1` also reports when an installed project is behind the kit version or a rendered adapter layer drifted.
 
 </details>
@@ -253,7 +262,7 @@ scripts/                   installers (render platform adapters from canon), upd
 
 How configuration layers in an installed project: global instructions (optional) -> project `AGENTS.md` + contracts -> rendered platform adapters (`.codex/`, `.claude/`) -> project-scope skills and learnings under `.agents/`.
 
-Contributions: run `scripts\validate-kit.ps1` before committing; after changing templates, skills, or the canon, re-render the UPM payload with `scripts\render-upm-payload.ps1`. English only, ASCII in templates/plugins/upm.
+Contributions: run `scripts\validate-kit.ps1` before committing (it also runs `scripts/test_usage.py`; CI runs the Python tests on Linux and macOS too); keep the Python ports in `scripts/` behaviorally in sync with their `.ps1` originals; after changing templates, skills, or the canon, re-render the UPM payload with `scripts\render-upm-payload.ps1`. English only, ASCII in templates/plugins/upm.
 
 </details>
 

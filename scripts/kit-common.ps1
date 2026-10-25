@@ -1,4 +1,6 @@
 # Shared helpers for Codex Unity Agent Kit scripts. Dot-source from sibling scripts.
+# The installers stay PowerShell; the scripts they ship into projects also come as
+# Python 3 ports (scripts/*.py), which the rendered hooks call.
 # Compatible with Windows PowerShell 5.1 and pwsh 7. ASCII only.
 
 $script:KitRoot = Split-Path -Parent $PSScriptRoot
@@ -340,9 +342,11 @@ function ConvertTo-CodexHooksJson {
         if (-not $events.Contains($hook.event)) { $events[$hook.event] = @() }
         $entry = [ordered]@{}
         if ($hook.codexMatcher) { $entry["matcher"] = $hook.codexMatcher }
-        $codexCommand = $hook.commandPwsh
+        $codexCommand = $hook.command
         if ($hook.commandCodex) { $codexCommand = $hook.commandCodex }
-        $entry["hooks"] = @([ordered]@{ type = "command"; command = $codexCommand; commandWindows = $hook.command })
+        $codexWindowsCommand = $hook.command
+        if ($hook.commandWindows) { $codexWindowsCommand = $hook.commandWindows }
+        $entry["hooks"] = @([ordered]@{ type = "command"; command = $codexCommand; commandWindows = $codexWindowsCommand })
         $events[$hook.event] += , $entry
     }
     if ($events.Count -eq 0) { return $null }
@@ -409,7 +413,9 @@ function ConvertTo-ClaudeSettingsJson {
         $entry = [ordered]@{}
         # Lifecycle events like Stop take no matcher; omit the key entirely.
         if ($hook.claudeMatcher) { $entry["matcher"] = $hook.claudeMatcher }
-        $entry["hooks"] = @([ordered]@{ type = "command"; command = $hook.command })
+        $claudeCommand = $hook.command
+        if ($hook.commandClaude) { $claudeCommand = $hook.commandClaude }
+        $entry["hooks"] = @([ordered]@{ type = "command"; command = $claudeCommand })
         $events[$hook.event] += , $entry
     }
     if ($events.Count -gt 0) { $settings["hooks"] = $events }
@@ -560,6 +566,8 @@ function Install-KitUnityContent {
     Install-KitSkills -Ctx $Ctx -SkillNames ($script:UnitySkills + $script:SharedSkills) -Cmdlet $Cmdlet -MirrorClaude
     Install-KitPlatformAdapters -Ctx $Ctx -Stack "unity" -Cmdlet $Cmdlet
     Install-KitFile -Ctx $Ctx -Source (Join-Path $script:KitRoot "scripts\check-unity-meta.ps1") -RelDest ".agents\scripts\check-unity-meta.ps1" -Cmdlet $Cmdlet
+    Install-KitFile -Ctx $Ctx -Source (Join-Path $script:KitRoot "scripts\check_unity_meta.py") -RelDest ".agents\scripts\check_unity_meta.py" -Cmdlet $Cmdlet
+    Install-KitFile -Ctx $Ctx -Source (Join-Path $script:KitRoot "scripts\unity_guard.py") -RelDest ".agents\scripts\unity_guard.py" -Cmdlet $Cmdlet
     Install-KitUsageReporter -Ctx $Ctx -Cmdlet $Cmdlet
 }
 
@@ -576,6 +584,10 @@ function Install-KitUsageReporter {
     Install-KitFile -Ctx $Ctx -Source (Join-Path $script:KitRoot "scripts\usage-prices.json") -RelDest ".agents\scripts\usage-prices.json" -Cmdlet $Cmdlet
     Install-KitFile -Ctx $Ctx -Source (Join-Path $script:KitRoot "scripts\usage-common.ps1") -RelDest ".agents\scripts\usage-common.ps1" -Cmdlet $Cmdlet
     Install-KitFile -Ctx $Ctx -Source (Join-Path $script:KitRoot "scripts\usage-stats.ps1") -RelDest ".agents\scripts\usage-stats.ps1" -Cmdlet $Cmdlet
+    # Python 3 ports (standard library only) - the hook targets on every platform but Codex on Windows.
+    foreach ($pythonScript in @("usage_common.py", "usage_report.py", "usage_footer.py", "usage_stats.py")) {
+        Install-KitFile -Ctx $Ctx -Source (Join-Path $script:KitRoot "scripts\$pythonScript") -RelDest ".agents\scripts\$pythonScript" -Cmdlet $Cmdlet
+    }
 }
 
 function Install-KitBackendContent {

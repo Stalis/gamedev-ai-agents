@@ -6,13 +6,13 @@ namespace GamedevAgentKit.Editor
     /// <summary>
     /// Resolves the package payload location and the target project locations.
     /// The payload lives in Kit~ (hidden from the asset importer) and is a
-    /// pre-rendered copy of what the kit's PowerShell installer would place
+    /// pre-rendered copy of what the kit's installer scripts would place
     /// into a Unity project.
     /// </summary>
     internal static class AgentKitPaths
     {
         internal const string PackageName = "com.ilezhnin.gamedev-agent-kit";
-        internal const string DocumentationUrl = "https://github.com/ilezhnin/gamedev-ai-agents";
+        internal const string DocumentationUrl = "https://github.com/Stalis/gamedev-ai-agents";
 
         internal static string ProjectRoot => Path.GetDirectoryName(Application.dataPath);
 

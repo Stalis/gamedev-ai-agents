@@ -1,5 +1,5 @@
 {
-  "comment": "Canonical automation hooks. Rendered into .codex/hooks.json (Codex), .claude/settings.json (Claude Code), .gemini/settings.json (Gemini CLI), and the .agents/rules Antigravity rules by the installers - never edit rendered files by hand. Scripts live in the platform-neutral .agents/scripts/ folder of the target project. Optional 'platforms' restricts a hook to specific adapters (codex, claude, gemini, antigravity); absent means all.",
+  "comment": "Canonical automation hooks. Rendered into .codex/hooks.json (Codex), .claude/settings.json (Claude Code), .gemini/settings.json (Gemini CLI), and the .agents/rules Antigravity rules by the installers - never edit rendered files by hand. Scripts live in the platform-neutral .agents/scripts/ folder of the target project. 'command' is the portable Python 3 default (Codex, Gemini CLI, Antigravity); 'commandClaude' resolves paths through $CLAUDE_PROJECT_DIR; 'commandWindows' is the PowerShell fallback Codex runs on Windows. Optional 'commandCodex'/'commandGemini' override the default per adapter. Optional 'platforms' restricts a hook to specific adapters (codex, claude, gemini, antigravity); absent means all.",
   "hooks": [
     {
       "name": "unity-meta-check",
@@ -7,20 +7,18 @@
       "event": "PostToolUse",
       "codexMatcher": "apply_patch",
       "claudeMatcher": "Edit|Write|MultiEdit",
-      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1",
-      "commandCodex": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1",
-      "commandGemini": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1",
-      "commandPwsh": "pwsh -NoProfile -File .agents/scripts/check-unity-meta.ps1"
+      "command": "python3 .agents/scripts/check_unity_meta.py",
+      "commandClaude": "python3 \"$CLAUDE_PROJECT_DIR/.agents/scripts/check_unity_meta.py\" --project-root \"$CLAUDE_PROJECT_DIR\"",
+      "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/check-unity-meta.ps1"
     },
     {
       "name": "usage-report",
       "stacks": ["unity", "backend"],
       "platforms": ["claude", "codex", "gemini"],
       "event": "Stop",
-      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/usage-report.ps1",
-      "commandCodex": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/usage-report.ps1",
-      "commandGemini": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/usage-report.ps1",
-      "commandPwsh": "pwsh -NoProfile -File .agents/scripts/usage-report.ps1"
+      "command": "python3 .agents/scripts/usage_report.py",
+      "commandClaude": "python3 \"$CLAUDE_PROJECT_DIR/.agents/scripts/usage_report.py\"",
+      "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .agents/scripts/usage-report.ps1"
     }
   ]
 }
